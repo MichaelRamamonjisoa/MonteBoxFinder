@@ -1,0 +1,7 @@
+{
+  "distance_threshold": 0.025,
+  "normals_threshold": 0.7,
+  "num_NN_normals": 6,
+  "min_cluster_size": 50,
+  "max_cluster_dist": 0.06
+}

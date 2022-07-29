@@ -1,0 +1,20 @@
+{
+  "optimizer": "UH",
+  "lambda_normals" : 0.0,
+  "lambda_single" : 0,
+  "sampling_density" : -100,
+  "tolerance" : 0.1,
+  "num_scene_points" : 60000,
+  "num_box_points" : 60000,
+  "MAX_EVAL": 40000,
+  "delta_UCB": 0.3,
+  "delta_UCB_final": 0.01,
+  "epsilon_UCB": 0.3,
+  "epsilon_UCB_final": 0.01,
+  "MC_UCB": 1,
+  "chamfer_clip": 0.1,
+  "completion_weight": 0.5,
+  "normals_weight": 0.25,
+  "use_gpu": true,
+  "plot_thickness": 0.05
+}
