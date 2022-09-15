@@ -6,7 +6,6 @@ import os
 import matplotlib.pyplot as plt
 import imageio
 from PIL import Image, ImageDraw, ImageFont
-import lib.visualization_callbacks as callbacks
 
 
 def normalized(a, axis=-1, order=2):
@@ -199,15 +198,6 @@ def draw_line(pt1, pt2, color=[1,0,0], thickness=0.05):
     line = [[0,1]]
     line_mesh = LineMesh([pt1, pt2], [[0,1]], [color], radius=thickness)
     return line_mesh.cylinder_segments
-
-
-def custom_draw_geometry_with_rotation(pcd):
-    """
-    From Open3D doc http://www.open3d.org/docs/0.9.0/tutorial/Advanced/customized_visualization.html
-    """
-
-    o3d.visualization.draw_geometries_with_animation_callback([pcd],
-                                                              callbacks.rotate_view)
 
 
 def draw_and_rotate_prediction(pcd, prediction_path, angle_increment=10., boxes_color=[0, 1, 0],
