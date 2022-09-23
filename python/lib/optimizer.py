@@ -225,6 +225,21 @@ class UCBOptimizer(Optimizer):
         self.all_UCB[:, 1] = -self.best_loss_per_proposal[:, 1] + \
                              self.delta * np.sqrt(np.log(curr_iter) / self.all_n_1[:])
 
+    def simulate_random(self):
+        simulated_scene = []
+        for d in self.observer.proposals:
+            if np.random.sample() < 0.5:
+                compatible_box = True
+                indices = [d_j.idx for d_j in simulated_scene if d_j.idx != d.idx]
+                if not np.all(self.observer.is_compatible[d.idx, indices]):
+                    compatible_box = False
+
+                if compatible_box:
+                    simulated_scene.append(d)
+                    self.is_proposal_in_simulation[d.idx] = True
+        return simulated_scene
+
+
     def simulate(self):
         simulated_scene = []
 
@@ -280,49 +295,29 @@ class UCBOptimizer(Optimizer):
                                            curr_delta * np.sqrt(np.log(curr_iter) / self.all_n_1[condition_UCB_1])
 
 
-    def run(self, show=True, savepath=None, run_MC=True):
+    def run(self, show=True, savepath=None):
         if savepath is not None:
             if not os.path.exists(savepath):
                 os.makedirs(savepath)
 
         N_eval_MC = self.cfg["MC_UCB"]
-        if run_MC:
-            MC_cfg_dict = copy.deepcopy(self.cfg)
-            MC_cfg_dict["MAX_EVAL"] = N_eval_MC
+        self.is_proposal_in_simulation = np.zeros(len(self.observer.proposals)).astype("bool")
+        self.score_history = {}
 
-            MC_opt = MCTSOptimizer(MC_cfg_dict, self.observer, self.device)
-            MC_opt.initialize_best_losses_and_priors()
-            MC_solution, MC_loss = MC_opt.run(show)
-            if savepath is not None:
-                MC_opt.save_solution(MC_solution, float(MC_loss.cpu().numpy()),
-                                     os.path.join(savepath, "iter_{:03d}.json".format(self.curr_iter)))
-            print("Done MC")
-        else:
-            print("Skipping MC")
-            N_eval_MC = 0
+        # Initialize with random choice
+        for i in range(N_eval_MC):
+            self.is_proposal_in_simulation *= False
+            simulation = self.simulate_random()
 
+            if len(simulation) > 0:
+                self.compute_loss_and_update_state(simulation)
 
-        # update UCB values based on number of visits in MCTS step
-        self.all_n_0 = copy.deepcopy(MC_opt.all_n_0)
-        self.all_n_1 = copy.deepcopy(MC_opt.all_n_1)
-        self.all_priors = copy.deepcopy(MC_opt.all_priors)
-        self.best_loss_per_proposal = copy.deepcopy(MC_opt.best_loss_per_proposal)
+                if self.loss < self.best_loss:
+                    self.best_loss = self.loss
+                    self.score_history[str(self.curr_iter + i)] = float(self.best_loss.cpu().numpy())
+                    self.best_solution = copy.deepcopy(simulation)
 
-        curr_iter = self.curr_iter + 1
-        curr_delta = (1. - curr_iter / self.max_eval) * self.delta + (curr_iter / self.max_eval) * self.delta_final
-
-        self.all_UCB[:, 0] = -self.best_loss_per_proposal[:, 0] + \
-                                           curr_delta * np.sqrt(np.log(curr_iter) / self.all_n_0[:])
-        self.all_UCB[:, 1] = -self.best_loss_per_proposal[:, 1] + \
-                                           curr_delta * np.sqrt(np.log(curr_iter) / self.all_n_1[:])
-
-        self.loss = MC_opt.loss
-        self.best_loss = MC_opt.best_loss
-        self.best_solution = copy.deepcopy(MC_opt.best_solution)
-
-        self.curr_iter = 0
-        self.score_history = MC_opt.score_history
-        self.prior_history = np.zeros((len(self.observer.proposals), self.max_eval))
+                self.curr_iter += 1
 
         self.is_proposal_in_simulation = np.zeros(len(self.observer.proposals)).astype("bool")
 

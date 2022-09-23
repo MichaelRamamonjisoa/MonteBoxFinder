@@ -7,13 +7,12 @@ sys.path.append(".")
 
 from lib.observer import Observer
 from lib.optimizer import *
-from lib.random_optimizer import RandomOptimizer
 
 import random
 import numpy as np
 import torch
 # from multiprocessing import Pool
-from torch.multiprocessing import Pool, set_start_method
+# from torch.multiprocessing import Pool, set_start_method
 
 
 OPTIMIZERS = {
@@ -40,7 +39,6 @@ class Runner:
     def __init__(self, args):
         with open(osp.join("../configs", f"{args.config}.json"), "r") as f:
             self.cfg = json.load(f)
-        self.cfg["use_dense"] = args.use_dense
         self.is_benchmark = args.benchmark
         self.scans_dir = args.scans_dir
         self.outdir = args.outdir
